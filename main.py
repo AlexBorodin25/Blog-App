@@ -287,3 +287,22 @@ def delete_comment(comment_id):
     db.commit()
     return redirect(url_for("post_detail", post_id=post_id))
 
+@app.route("/admin")
+def admin():
+    admin_required()
+
+    users = get_db().execute(
+        "SELECT id, username, is_admin FROM users ORDER BY created_at DESC"
+    ).fetchall()
+    posts = get_db().execute(
+        "SELECT posts.*, users.username FROM posts JOIN users ON users.id = posts.user_id ORDER BY posts.created_at DESC"
+    ).fetchall()
+    comments = get_db().execute(
+        "SELECT comments.*, users.username FROM comments JOIN users ON users.id = comments.user_id ORDER BY comments.created_at DESC"
+    ).fetchall()
+
+    return render_template("admin.html", users=users, posts=posts, comments=comments)
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)

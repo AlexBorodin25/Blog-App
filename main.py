@@ -3,7 +3,7 @@ import sqlite3
 
 
 import bcrypt
-from flask import Flask, session, g, request
+from flask import Flask, session, g, request, redirect, request_template, url_for, abort
 from xlwings.pro.reports import render_template
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -114,3 +114,29 @@ def register():
                 error = "User already exists."
 
     return render_template("register.html", error=error)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        password = request.form['password']
+
+        user = get_db().execute(
+            "SELECT * FROM users WHERE username = ?", (username,)
+        ).fetchone()
+
+        if user is None or not verify_password(password, user['password_hash']):
+            error = "Invalid username or password."
+        else:
+            session.clear()
+            session['user_id'] = user['id']
+            return redirect(url_for("index"))
+
+    return render_template("login.html", error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for("index"))

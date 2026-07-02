@@ -1,0 +1,56 @@
+body {
+    font-family: system-ui, Arial, sans-serif;
+    background: aliceblue;
+    color: black;
+    margin: 0;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    gap: 12px;
+    background: darkblue;
+    color: white;
+}
+
+nav a {
+    color: white;
+}
+
+main {
+    max-width: 800px;
+    margin: 12px auto;
+    padding: 12px;
+}
+
+.card,
+.comment {
+    background: aliceblue;
+    padding: 12px;
+    margin: 12px;
+    border: 1px solid darkblue;
+    border-radius: 10px;
+}
+
+input,
+textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    margin: 12px;
+}
+
+button {
+    cursor: pointer;
+    padding: 12px;
+}
+
+.inline {
+    display: inline;
+}
+
+.error {
+    color: red;
+}

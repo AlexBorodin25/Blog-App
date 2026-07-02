@@ -63,3 +63,9 @@ def admin_required():
     login_required()
     if not g.user['is_admin']:
         abort(403)
+
+def hash_password(password):
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password, hashed_password):
+    return bcrypt.checkpw(password.encode(), hashed_password.encode())

@@ -1,17 +1,17 @@
-import datetime
 import os
 import sqlite3
+from contextlib import closing
+from datetime import datetime
 
 
 import bcrypt
-from flask import Flask, session, g, request, redirect, request_template, url_for, abort
-from xlwings.pro.reports import render_template
+from flask import Flask, session, g, request, redirect, render_template, url_for, abort
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'blog.db')
 
 app = Flask(__name__)
-app.secret_key =
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', "development-key")
 
 def get_db():
     if "db" not in g:
@@ -45,6 +45,18 @@ def init_db():
                    updated_at TEXT NOT NULL,
                    FOREIGN KEY(user_id) REFERENCES users(id))
         """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                post_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id))
+                FOREIGN KEY(post_id) REFERENCES posts(id)
+            )
+        """)
         db.commit()
 
 @app.before_request
@@ -77,7 +89,7 @@ def index():
     posts = get_db().execute("""
         SELECT posts.*, users.username
         FROM posts
-        JOIN users ON users.id = poster.user_id
+        JOIN users ON users.id = posts.user_id
         ORDER BY posts.created_at DESC"""
     ).fetchall()
     return render_template("index.html", posts=posts)

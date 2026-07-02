@@ -1,32 +1,49 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <article class="card">
     <h1>{{ post.title }}</h1>
     <p>Made by {{ post.username }} on {{ post.created_at[:10] }}</p>
     <p>{{ post.content }}</p>
 
-    {% if g.user and g.user.id == post.user_id or g.user.is_admin %}
-        <a href="/posts/{{ post.id }}/edit">Edit post</a>
-        <form method="post" action="{{ url_for('delete_comment', comment_id=comment.id) }}" class="inline">
-            <button type="submit">Delete></button>
-        </form>
+    {% if g.user %}
+        {% if g.user.id == post.user_id or g.user.is_admin %}
+            <a href="/posts/{{ post.id }}/edit">Edit post</a>
+
+            <form method="post" action="{{ url_for('delete_comment', comment_id=comment.id) }}" class="inline">
+                <button type="submit">Delete></button>
+            </form>
+        {% endif %}
     {% endif %}
 </article>
 
 <h2>Comments</h2>
 
 {% for comment in comments %}
-<div class="comment">
-    <p>{{ comment.content }}</p>
-    <small>Made by {{ comment.username }} on {{ comment.created_at[:10] }}</small>
+    <div class="comment">
+        <p>{{ comment.content }}</p>
+        <small>Made by {{ comment.username }} on {{ comment.created_at[:10] }}</small>
 
-    {% if g.user and g.user.id == comment.user_id or g.user.is_admin %}
-    <form method="post" action="/comments/{{ comment.id }}/delete" class="inline">
-        <button>Delete</button>
-    </form>
-    {% endif %}
-</div>
+        {% if g.user %}
+            {% if g.user.id == comment.user_id or g.user.is_admin %}
+                <a href="{{ url_for('edit_comment', comment_id=comment.id) }}">Edit</a>
+
+                <form method="post" action="{{ url_for('delete_comment', comment_id=comment.id) }}" class="inline">
+                    <button type="submit">Delete</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
 {% else %}
-<p><a href="/login">Login</a> to comment.</p>
+    <p>No comments yet.</p>
+{% endfor %}
+
+{% if g.user %}
+    <form method="post" action="{{ url_for('add_comment', post_id=post.id) }}">
+        <textarea name="content" rows="6" placeholder="Add a comment..." required></textarea>
+        <button type="submit">Add comment</button>
+    </form>
+{% else %}
+    <p><a href="{{ url_for('login') }}">Login</a> to comment.</p>
 {% endif %}
 {% endblock %}

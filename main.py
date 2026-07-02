@@ -268,3 +268,22 @@ def edit_comment(comment_id):
             return redirect(url_for("post_detail", post_id=comment["post_id"]))
 
     return render_template("edit_comment.html", comment=comment)
+
+@app.route("/comments/<int:comment_id>/delete", methods=['POST'])
+def delete_comment(comment_id):
+    login_required()
+    db = get_db()
+
+    comment = get_db().execute(
+        "SELECT * FROM comments WHERE id = ?", (comment_id,)
+    ).fetchone()
+    if comment is None:
+        abort(404)
+    if comment["user_id"] != g.user['id'] and not g.user['is_admin']:
+        abort(403)
+
+    post_id = comment["post_id"]
+    db.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
+    db.commit()
+    return redirect(url_for("post_detail", post_id=post_id))
+

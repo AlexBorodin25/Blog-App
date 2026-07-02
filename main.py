@@ -1,9 +1,9 @@
 import os
 import sqlite3
-from calendar import c
+
 
 import bcrypt
-from flask import Flask
+from flask import Flask, session, g,
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'blog.db')
@@ -12,14 +12,14 @@ app = Flask(__name__)
 app.secret_key =
 
 def get_db():
-    if "db" not in a:
-        a.db = sqlite3.connect(DB_PATH)
-        a.db.row_factory = sqlite3.Row
-    return a.db
+    if "db" not in g:
+        g.db = sqlite3.connect(DB_PATH)
+        g.db.row_factory = sqlite3.Row
+    return g.db
 
 @app.teardown_appcontext
 def close_db(error=None):
-    db = a.pop('db', None)
+    db = g.pop('db', None)
     if db is not None:
         db.close()
 
@@ -44,3 +44,22 @@ def init_db():
                    FOREIGN KEY(user_id) REFERENCES users(id))
         """)
         db.commit()
+
+@app.before_request
+def load_user():
+    user_id = session.get('user_id')
+    g.user = None
+    if user_id:
+        g.user = get_db().execute(
+            'SELECT * FROM users WHERE id = ?',
+            (user_id,)
+        ).fetchone()
+
+def login_required():
+    if g.user is None:
+        abort(401)
+
+def admin_required():
+    login_required()
+    if not g.user['is_admin']:
+        abort(403)

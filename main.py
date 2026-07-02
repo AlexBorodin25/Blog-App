@@ -176,10 +176,10 @@ def create_post():
     return render_template("post_form.html", post=None)
 
 @app.route('/posts/<int:post_id>')
-def show_post(post_id):
+def post_detail(post_id):
     post = get_db().execute(
         """SELECT posts.*, users.username
-        FROM posts JOIN users ON users.id = poster.user_id
+        FROM posts JOIN users ON users.id = posts.user_id
         WHERE posts.id = ?""",
         (post_id,)).fetchone()
 
@@ -235,7 +235,7 @@ def delete_post(post_id):
     if post["user_id"] != g.user['id'] and not g.user['is_admin']:
         abort(403)
 
-    db.execute("DELETE FROM comments WHERE id = ?", (post_id,))
+    db.execute("DELETE FROM comments WHERE post_id = ?", (post_id,))
     db.execute("DELETE FROM posts WHERE id = ?", (post_id,))
     db.commit()
     return redirect(url_for("index"))

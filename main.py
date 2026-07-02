@@ -1,3 +1,4 @@
+import datetime
 import os
 import sqlite3
 
@@ -140,3 +141,24 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
+@app.route('/posts/new', methods=['GET', 'POST'])
+def create_post():
+    login_required()
+
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        content = request.form['content'].strip()
+        now = datetime.utcnow().isoformat()
+
+        if title and content:
+            db = get_db()
+            db.execute(
+                """INSERT INTO posts (user_id, title, content, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)""",
+                (g.user['id'], title, content, now, now)
+            )
+            db.commit()
+            return redirect(url_for("index"))
+
+    return render_template("post.html", post=None)

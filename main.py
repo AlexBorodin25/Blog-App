@@ -161,7 +161,7 @@ def create_post():
             db.commit()
             return redirect(url_for("index"))
 
-    return render_template("post.html", post=None)
+    return render_template("post_form.html", post=None)
 
 @app.route('/posts/<int:post_id>')
 def show_post(post_id):
@@ -181,4 +181,31 @@ def show_post(post_id):
         ORDER BY comments.created_at ASC""",
         (post_id,)).fetchall()
 
-    return render_template('post.html', post=post, comments=comments)
+    return render_template('post_detail.html', post=post, comments=comments)
+
+@app.route("/posts/<int:post_id>/edit", methods=['GET', 'POST'])
+def edit_post(post_id):
+    login_required()
+    db = get_db()
+
+    post = get_db().execute(
+        "SELECT * FROM posts WHERE id = ?", (post_id,)
+    ).fetchone()
+    if post is None:
+        abort(404)
+    if post["user_id"] != g.user['id'] and not g.user['is_admin']:
+        abort(403)
+
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        content = request.form['content'].strip()
+
+        if title and content:
+            db.execute(
+                "UPDATE posts SET title = ?, content = ?, updated_at = ? WHERE id = ?",
+                (title, content, datetime.utcnow().isoformat(), post_id),
+            )
+            db.commit()
+            return redirect(url_for("post_detail", post_id=post_id))
+
+    return render_template("post_form.html", post=post)

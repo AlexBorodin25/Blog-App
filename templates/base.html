@@ -2,9 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Blog App</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<nav>
+    <a href="/">Blog</a>
+    {% if g.user %}
+        <a href="/posts/new">New Post</a>
+        {% if g.user.is_admin %}<a href="/admin">Admin</a>{% endif %}
+        <span>{{ g.user.username }}</span>
+        <a href="/logout">Logout</a>
+    {% else %}
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    {% endif %}
+</nav>
 
+<main>
+    {% block content %}{% endblock %}
+</main>
 </body>
 </html>

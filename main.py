@@ -162,3 +162,23 @@ def create_post():
             return redirect(url_for("index"))
 
     return render_template("post.html", post=None)
+
+@app.route('/posts/<int:post_id>')
+def show_post(post_id):
+    post = get_db().execute(
+        """SELECT posts.*, users.username
+        FROM posts JOIN users ON users.id = poster.user_id
+        WHERE posts.id = ?""",
+        (post_id,)).fetchone()
+
+    if post is None:
+        abort(404)
+
+    comments = get_db().execute(
+        """SELECT comments.*, users.username
+        FROM comments JOIN users ON users.id = comments.user_id
+        WHERE comments.post_id = ?
+        ORDER BY comments.created_at ASC""",
+        (post_id,)).fetchall()
+
+    return render_template('post.html', post=post, comments=comments)

@@ -228,3 +228,43 @@ def delete_post(post_id):
     db.commit()
     return redirect(url_for("index"))
 
+@app.route("/posts/<int:post_id>/comments", methods=['POST'])
+def add_comment(post_id):
+    login_required()
+
+    content = request.form['content'].strip()
+    if content:
+        now = datetime.utcnow().isoformat()
+        db = get_db()
+        db.execute(
+            """INSERT INTO comments (post_id, user_id, content, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)""", (post_id, g.user['id'], content, now, now)
+        )
+        db.commit()
+
+    return redirect(url_for("post_detail", post_id=post_id))
+
+@app.route("/comments/<int:comment_id>/edit", methods=['GET', 'POST'])
+def edit_comment(comment_id):
+    login_required()
+    db = get_db()
+
+    comment = get_db().execute(
+        "SELECT * FROM comments WHERE id = ?", (comment_id,)
+    ).fetchone()
+    if comment is None:
+        abort(404)
+    if comment["user_id"] != g.user['id'] and not g.user['is_admin']:
+        abort(403)
+
+    if request.method == 'POST':
+        content = request.form['content'].strip()
+        if content:
+            db.execute(
+                "UPDATE comments SET content = ?, updated_at = ? WHERE id = ?",
+                (content, datetime.utcnow().isoformat(), comment_id),
+            )
+            db.commit()
+            return redirect(url_for("post_detail", post_id=comment["post_id"]))
+
+    return render_template("edit_comment.html", comment=comment)

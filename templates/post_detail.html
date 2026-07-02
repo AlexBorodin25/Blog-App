@@ -1,10 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
+<article class="card">
+    <h1>{{ post.title }}</h1>
+    <p>Made by {{ post.username }} on {{ post.created_at[:10] }}</p>
+    <p>{{ post.content }}</p>
 
-</body>
-</html>
+    {% if user and (user.id == post.user_id) or user.is_admin) %}
+        <a href="/posts/{{ post.id }}/edit">Edit post</a>
+        <form method="post" action="/posts/{{ post.id }}/delete" class="inline">
+            <button>Delete></button>
+        </form>
+    {% endif %}
+</article>
+
+<h2>Comments</h2>
+
+{% for comment in comments %}
+<div class="comment">
+    <p>{{ comment.content }}</p>
+    <small>Made by {{ comment.username }} on {{ comment.created_at[:10] }}</small>
+
+    {% if user and (user.id == comment.user_id or user.is_admin) %}
+    <form method="post" action="/comments/{{ comment.id }}/delete" class="inline">
+        <button>Delete</button>
+    </form>
+    {% endif %}
+</div>
+{% else %}
+<p><a href="/login">Login</a> to comment.</p>
+{% endif %}
+{% endblock %}

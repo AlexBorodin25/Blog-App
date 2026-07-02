@@ -69,3 +69,13 @@ def hash_password(password):
 
 def verify_password(password, hashed_password):
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
+
+@app.route('/')
+def index():
+    posts = get_db().execute("""
+        SELECT posts.*, users.username
+        FROM posts
+        JOIN users ON users.id = poster.user_id
+        ORDER BY posts.created_at DESC"""
+    ).fetchall()
+    return render_template("index.html", posts=posts)

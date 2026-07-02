@@ -3,7 +3,8 @@ import sqlite3
 
 
 import bcrypt
-from flask import Flask, session, g,
+from flask import Flask, session, g, request
+from xlwings.pro.reports import render_template
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'blog.db')
@@ -79,3 +80,37 @@ def index():
         ORDER BY posts.created_at DESC"""
     ).fetchall()
     return render_template("index.html", posts=posts)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = None
+
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        password = request.form['password']
+
+        if not username or not password:
+            error = "All fields are required."
+        else:
+            db = get_db()
+            user_count = db.execute(
+                "SELECT COUNT(*) FROM users"
+            ).fetchone()[0]
+
+            try:
+                db.execute(
+                    """INSERT INTO users (username, password_hash, is_admin, created_at)
+                    VALUES (?, ?, ?, ?)""",
+                    (
+                        username,
+                        hash_password(password),
+                        1 if user_count == 0 else 0,
+                        datetime.utcnow().isoformat()
+                    ),
+                )
+                db.commit()
+                return redirect(url_for("login"))
+            except sqlite3.IntegrityError:
+                error = "User already exists."
+
+    return render_template("register.html", error=error)

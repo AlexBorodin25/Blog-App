@@ -5,7 +5,7 @@
     <p>Made by {{ post.username }} on {{ post.created_at[:10] }}</p>
     <p>{{ post.content }}</p>
 
-    {% if g.user and (g.user.id == post.user_id) or g.user.is_admin) %}
+    {% if g.user and g.user.id == post.user_id or g.user.is_admin %}
         <a href="/posts/{{ post.id }}/edit">Edit post</a>
         <form method="post" action="{{ url_for('delete_comment', comment_id=comment.id) }}" class="inline">
             <button type="submit">Delete></button>
@@ -20,7 +20,7 @@
     <p>{{ comment.content }}</p>
     <small>Made by {{ comment.username }} on {{ comment.created_at[:10] }}</small>
 
-    {% if g.user and (g.user.id == comment.user_id or g.user.is_admin) %}
+    {% if g.user and g.user.id == comment.user_id or g.user.is_admin %}
     <form method="post" action="/comments/{{ comment.id }}/delete" class="inline">
         <button>Delete</button>
     </form>

@@ -16,7 +16,7 @@ app = Flask(__name__)
 if not os.environ.get('FLASK_SECRET_KEY'):
     raise RuntimeError('FLASK_SECRET_KEY environment variable is required')
 
-app.secret_key = os.environ('FLASK_SECRET_KEY')
+app.secret_key = os.environ['FLASK_SECRET_KEY']
 csrf = CSRFProtect(app)
 
 def get_db():

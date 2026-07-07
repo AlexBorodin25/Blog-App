@@ -3,6 +3,8 @@
 <h1>Edit Comment</h1>
 
 <form method ="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
     <textarea name="content" rows="5" required>{{ comment.content }}</textarea>
     <button type="submit">Save comment</button>
     <a href="{{ url_for('post_detail', post_id=comment.post.id) }}">Cancel</a>

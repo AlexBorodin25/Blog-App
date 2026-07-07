@@ -6,6 +6,7 @@ from datetime import datetime
 
 import bcrypt
 from flask import Flask, session, g, request, redirect, render_template, url_for, abort
+from flask_wtf import CSRFProtect
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'blog.db')
@@ -16,6 +17,7 @@ if not os.environ.get('FLASK_SECRET_KEY'):
     raise RuntimeError('FLASK_SECRET_KEY environment variable is required')
 
 app.secret_key = os.environ('FLASK_SECRET_KEY')
+csrf = CSRFProtect(app)
 
 def get_db():
     if "db" not in g:

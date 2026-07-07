@@ -3,6 +3,7 @@
 <h1>{% if post %}Edit Post{% else %}New Post{% endif %}</h1>
 
 <form method="post" action="{{ action }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input name="title" placeholder="Title" value="{{ post.title if post else ''}}" required>
     <textarea name="content" rows="10" placeholder="Write here..." required>{{ post.content if post else ''}}</textarea>
     <button>Save</button>

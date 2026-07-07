@@ -11,7 +11,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'blog.db')
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', "development-key")
+
+if not os.environ.get('FLASK_SECRET_KEY'):
+    raise RuntimeError('FLASK_SECRET_KEY environment variable is required')
+
+app.secret_key = os.environ('FLASK_SECRET_KEY')
 
 def get_db():
     if "db" not in g:

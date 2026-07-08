@@ -184,3 +184,54 @@ def test_crud_post(client):
         ).fetchone()
 
     assert deleted_post is None
+
+def test_crud_comment(client):
+    assert client.post("/posts/1/comments", data={"content": "No login"}).status_code == 401
+
+    with main.app.app_context():
+        user = add_user()
+        post_id = add_post(user["id"])
+
+    login(client)
+
+    create_response = client.post(
+        f"/posts/{post_id}/comments",
+        data={"content": "First Comment"},
+    )
+
+    assert create_response.status_code == 302
+
+    with main.app.app_context():
+        comment = main.get_db().execute(
+            "SELECT * FROM comments WHERE post_id = ?",
+            (post_id,),
+        ).fetchone()
+
+    assert comment is not None
+
+    edit_response = client.post(
+        f"/comments/{comment['id']}/edit",
+        data={"content": "New Comment"},
+    )
+
+    assert edit_response.status_code == 302
+
+    with main.app.app_context():
+        updated_comment = main.get_db().execute(
+            "SELECT * FROM comments WHERE id = ?",
+            (comment["id"],),
+        ).fetchone()
+
+    assert updated_comment["content"] == "New Comment"
+
+    delete_response = client.post(f"/comments/{comment['id']}/delete")
+
+    assert delete_response.status_code == 302
+
+    with main.app.app_context():
+        deleted_comment = main.get_db().execute(
+            "SELECT * FROM comments WHERE id = ?",
+            (comment["id"],),
+        ).fetchone()
+
+    assert deleted_comment is None

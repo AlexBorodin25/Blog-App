@@ -132,3 +132,55 @@ def test_register_login_logout(client):
 
     with client.session_transaction() as sess:
         assert "user_id" not in sess
+
+def test_crud_post(client):
+    assert client.get("/posts/new").status_code == 401
+
+    with main.app.app_context():
+        user = add_user()
+
+    login(client)
+
+    create_response = client.post(
+        "/posts/new",
+        data={"title": "New Post", "content": "Content"},
+    )
+
+    assert create_response.status_code == 302
+
+    with main.app.app_context():
+        post = main.get_db().execute(
+            "SELECT * FROM posts WHERE title = ?",
+            ("New Post",),
+        ).fetchone()
+
+    assert post is not None
+    assert client.get(f"/posts/{post['id']}").status_code == 200
+    assert client.get("/posts/wrong").status_code == 404
+
+    edit_response = client.post(
+        f"/posts/{post['id']}/edit",
+        data={"title": "New Title", "content": "New Content"},
+    )
+
+    assert edit_response.status_code == 302
+
+    with main.app.app_context():
+        updated_post = main.get_db().execute(
+            "SELECT * FROM posts WHERE id = ?",
+            (post["id"],),
+        ).fetchone()
+
+    assert updated_post["title"] == "New Title"
+
+    delete_response = client.post(f"/posts/{post['id']}/delete")
+
+    assert delete_response.status_code == 302
+
+    with main.app.app_context():
+        deleted_post = main.get_db().execute(
+            "SELECT * FROM posts WHERE id = ?",
+            (post["id"],),
+        ).fetchone()
+
+    assert deleted_post is None

@@ -260,3 +260,15 @@ def test_auth_rules(client):
     assert comment_response.status_code == 403
 
     assert client.get("/admin").status_code == 403
+
+def test_admin(client):
+    assert client.get("/admin").status_code == 401
+
+    with main.app.app_context():
+        add_user("admin", "password", is_admin=1)
+
+    login(client, "admin", "password")
+
+    response = client.get("/admin")
+
+    assert response.status_code == 200

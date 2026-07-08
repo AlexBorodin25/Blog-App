@@ -70,3 +70,21 @@ def add_comment(post_id, user_id, content="Comment"):
 def login(client, username="testing", password="password"):
     return client.post("/login", data={"username": username, "password": password})
 
+def test_database_and_password(client):
+    with main.app.app_context():
+        conn = main.get_db()
+        tables = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+
+    table_name = {table["name"] for table in tables}
+
+    assert isinstance(conn, sqlite3.Connection)
+    assert conn.row_factory == sqlite3.Row
+    assert {"users", "posts", "comments"}.issubset(table_name)
+
+    hashed_password = main.hash_password("secret")
+
+    assert hashed_password != "secret"
+    assert main.verify_password("secret", hashed_password)
+    assert not main.verify_password("wrong", hashed_password)

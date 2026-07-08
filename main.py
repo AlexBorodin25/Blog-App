@@ -9,15 +9,16 @@ from flask import Flask, session, g, request, redirect, render_template, url_for
 from flask_wtf import CSRFProtect
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, 'blog.db')
+DB_PATH = os.path.join(BASE_DIR, "blog.db")
 
 app = Flask(__name__)
 
-if not os.environ.get('FLASK_SECRET_KEY'):
-    raise RuntimeError('FLASK_SECRET_KEY environment variable is required')
+if not os.environ.get("FLASK_SECRET_KEY"):
+    raise RuntimeError("FLASK_SECRET_KEY environment variable is required")
 
-app.secret_key = os.environ['FLASK_SECRET_KEY']
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 csrf = CSRFProtect(app)
+
 
 def get_db():
     if "db" not in g:
@@ -25,11 +26,13 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
+
 @app.teardown_appcontext
 def close_db(error=None):
-    db = g.pop('db', None)
+    db = g.pop("db", None)
     if db is not None:
         db.close()
+
 
 def init_db():
     with closing(sqlite3.connect(DB_PATH)) as db:
@@ -65,56 +68,63 @@ def init_db():
         """)
         db.commit()
 
+
 @app.before_request
 def load_user():
-    user_id = session.get('user_id')
+    user_id = session.get("user_id")
     g.user = None
     if user_id:
-        g.user = get_db().execute(
-            'SELECT * FROM users WHERE id = ?',
-            (user_id,)
-        ).fetchone()
+        g.user = (
+            get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        )
+
 
 def login_required():
     if g.user is None:
         abort(401)
 
+
 def admin_required():
     login_required()
-    if not g.user['is_admin']:
+    if not g.user["is_admin"]:
         abort(403)
+
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+
 def verify_password(password, hashed_password):
     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
-@app.route('/')
+
+@app.route("/")
 def index():
-    posts = get_db().execute("""
+    posts = (
+        get_db()
+        .execute("""
         SELECT posts.*, users.username
         FROM posts
         JOIN users ON users.id = posts.user_id
-        ORDER BY posts.created_at DESC"""
-    ).fetchall()
+        ORDER BY posts.created_at DESC""")
+        .fetchall()
+    )
     return render_template("index.html", posts=posts)
 
-@app.route('/register', methods=['GET', 'POST'])
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
     error = None
 
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password']
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
 
         if not username or not password:
             error = "All fields are required."
         else:
             db = get_db()
-            user_count = db.execute(
-                "SELECT COUNT(*) FROM users"
-            ).fetchone()[0]
+            user_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
 
             try:
                 db.execute(
@@ -124,7 +134,7 @@ def register():
                         username,
                         hash_password(password),
                         1 if user_count == 0 else 0,
-                        datetime.utcnow().isoformat()
+                        datetime.utcnow().isoformat(),
                     ),
                 )
                 db.commit()
@@ -134,39 +144,44 @@ def register():
 
     return render_template("register.html", error=error)
 
-@app.route('/login', methods=['GET', 'POST'])
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
 
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password']
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
 
-        user = get_db().execute(
-            "SELECT * FROM users WHERE username = ?", (username,)
-        ).fetchone()
+        user = (
+            get_db()
+            .execute("SELECT * FROM users WHERE username = ?", (username,))
+            .fetchone()
+        )
 
-        if user is None or not verify_password(password, user['password_hash']):
+        if user is None or not verify_password(password, user["password_hash"]):
             error = "Invalid username or password."
         else:
             session.clear()
-            session['user_id'] = user['id']
+            session["user_id"] = user["id"]
             return redirect(url_for("index"))
 
     return render_template("login.html", error=error)
 
-@app.route('/logout')
+
+@app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("index"))
 
-@app.route('/posts/new', methods=['GET', 'POST'])
+
+@app.route("/posts/new", methods=["GET", "POST"])
 def create_post():
     login_required()
 
-    if request.method == 'POST':
-        title = request.form['title'].strip()
-        content = request.form['content'].strip()
+    if request.method == "POST":
+        title = request.form["title"].strip()
+        content = request.form["content"].strip()
         now = datetime.utcnow().isoformat()
 
         if title and content:
@@ -174,49 +189,59 @@ def create_post():
             db.execute(
                 """INSERT INTO posts (user_id, title, content, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?)""",
-                (g.user['id'], title, content, now, now)
+                (g.user["id"], title, content, now, now),
             )
             db.commit()
             return redirect(url_for("index"))
 
     return render_template("post_form.html", post=None)
 
-@app.route('/posts/<int:post_id>')
+
+@app.route("/posts/<int:post_id>")
 def post_detail(post_id):
-    post = get_db().execute(
-        """SELECT posts.*, users.username
+    post = (
+        get_db()
+        .execute(
+            """SELECT posts.*, users.username
         FROM posts JOIN users ON users.id = posts.user_id
         WHERE posts.id = ?""",
-        (post_id,)).fetchone()
+            (post_id,),
+        )
+        .fetchone()
+    )
 
     if post is None:
         abort(404)
 
-    comments = get_db().execute(
-        """SELECT comments.*, users.username
+    comments = (
+        get_db()
+        .execute(
+            """SELECT comments.*, users.username
         FROM comments JOIN users ON users.id = comments.user_id
         WHERE comments.post_id = ?
         ORDER BY comments.created_at ASC""",
-        (post_id,)).fetchall()
+            (post_id,),
+        )
+        .fetchall()
+    )
 
-    return render_template('post_detail.html', post=post, comments=comments)
+    return render_template("post_detail.html", post=post, comments=comments)
 
-@app.route("/posts/<int:post_id>/edit", methods=['GET', 'POST'])
+
+@app.route("/posts/<int:post_id>/edit", methods=["GET", "POST"])
 def edit_post(post_id):
     login_required()
     db = get_db()
 
-    post = get_db().execute(
-        "SELECT * FROM posts WHERE id = ?", (post_id,)
-    ).fetchone()
+    post = get_db().execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
     if post is None:
         abort(404)
-    if post["user_id"] != g.user['id'] and not g.user['is_admin']:
+    if post["user_id"] != g.user["id"] and not g.user["is_admin"]:
         abort(403)
 
-    if request.method == 'POST':
-        title = request.form['title'].strip()
-        content = request.form['content'].strip()
+    if request.method == "POST":
+        title = request.form["title"].strip()
+        content = request.form["content"].strip()
 
         if title and content:
             db.execute(
@@ -228,17 +253,16 @@ def edit_post(post_id):
 
     return render_template("post_form.html", post=post)
 
-@app.route("/posts/<int:post_id>/delete", methods=['POST'])
+
+@app.route("/posts/<int:post_id>/delete", methods=["POST"])
 def delete_post(post_id):
     login_required()
     db = get_db()
 
-    post = get_db().execute(
-        "SELECT * FROM posts WHERE id = ?", (post_id,)
-    ).fetchone()
+    post = get_db().execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
     if post is None:
         abort(404)
-    if post["user_id"] != g.user['id'] and not g.user['is_admin']:
+    if post["user_id"] != g.user["id"] and not g.user["is_admin"]:
         abort(403)
 
     db.execute("DELETE FROM comments WHERE post_id = ?", (post_id,))
@@ -246,37 +270,42 @@ def delete_post(post_id):
     db.commit()
     return redirect(url_for("index"))
 
-@app.route("/posts/<int:post_id>/comments", methods=['POST'])
+
+@app.route("/posts/<int:post_id>/comments", methods=["POST"])
 def add_comment(post_id):
     login_required()
 
-    content = request.form['content'].strip()
+    content = request.form["content"].strip()
     if content:
         now = datetime.utcnow().isoformat()
         db = get_db()
         db.execute(
             """INSERT INTO comments (post_id, user_id, content, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)""", (post_id, g.user['id'], content, now, now)
+            VALUES (?, ?, ?, ?, ?)""",
+            (post_id, g.user["id"], content, now, now),
         )
         db.commit()
 
     return redirect(url_for("post_detail", post_id=post_id))
 
-@app.route("/comments/<int:comment_id>/edit", methods=['GET', 'POST'])
+
+@app.route("/comments/<int:comment_id>/edit", methods=["GET", "POST"])
 def edit_comment(comment_id):
     login_required()
     db = get_db()
 
-    comment = get_db().execute(
-        "SELECT * FROM comments WHERE id = ?", (comment_id,)
-    ).fetchone()
+    comment = (
+        get_db()
+        .execute("SELECT * FROM comments WHERE id = ?", (comment_id,))
+        .fetchone()
+    )
     if comment is None:
         abort(404)
-    if comment["user_id"] != g.user['id'] and not g.user['is_admin']:
+    if comment["user_id"] != g.user["id"] and not g.user["is_admin"]:
         abort(403)
 
-    if request.method == 'POST':
-        content = request.form['content'].strip()
+    if request.method == "POST":
+        content = request.form["content"].strip()
         if content:
             db.execute(
                 "UPDATE comments SET content = ?, updated_at = ? WHERE id = ?",
@@ -287,17 +316,20 @@ def edit_comment(comment_id):
 
     return render_template("edit_comment.html", comment=comment)
 
-@app.route("/comments/<int:comment_id>/delete", methods=['POST'])
+
+@app.route("/comments/<int:comment_id>/delete", methods=["POST"])
 def delete_comment(comment_id):
     login_required()
     db = get_db()
 
-    comment = get_db().execute(
-        "SELECT * FROM comments WHERE id = ?", (comment_id,)
-    ).fetchone()
+    comment = (
+        get_db()
+        .execute("SELECT * FROM comments WHERE id = ?", (comment_id,))
+        .fetchone()
+    )
     if comment is None:
         abort(404)
-    if comment["user_id"] != g.user['id'] and not g.user['is_admin']:
+    if comment["user_id"] != g.user["id"] and not g.user["is_admin"]:
         abort(403)
 
     post_id = comment["post_id"]
@@ -305,21 +337,33 @@ def delete_comment(comment_id):
     db.commit()
     return redirect(url_for("post_detail", post_id=post_id))
 
+
 @app.route("/admin")
 def admin():
     admin_required()
 
-    users = get_db().execute(
-        "SELECT id, username, is_admin FROM users ORDER BY created_at DESC"
-    ).fetchall()
-    posts = get_db().execute(
-        "SELECT posts.*, users.username FROM posts JOIN users ON users.id = posts.user_id ORDER BY posts.created_at DESC"
-    ).fetchall()
-    comments = get_db().execute(
-        "SELECT comments.*, users.username FROM comments JOIN users ON users.id = comments.user_id ORDER BY comments.created_at DESC"
-    ).fetchall()
+    users = (
+        get_db()
+        .execute("SELECT id, username, is_admin FROM users ORDER BY created_at DESC")
+        .fetchall()
+    )
+    posts = (
+        get_db()
+        .execute(
+            "SELECT posts.*, users.username FROM posts JOIN users ON users.id = posts.user_id ORDER BY posts.created_at DESC"
+        )
+        .fetchall()
+    )
+    comments = (
+        get_db()
+        .execute(
+            "SELECT comments.*, users.username FROM comments JOIN users ON users.id = comments.user_id ORDER BY comments.created_at DESC"
+        )
+        .fetchall()
+    )
 
     return render_template("admin.html", users=users, posts=posts, comments=comments)
+
 
 if __name__ == "__main__":
     init_db()

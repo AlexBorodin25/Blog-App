@@ -88,3 +88,47 @@ def test_database_and_password(client):
     assert hashed_password != "secret"
     assert main.verify_password("secret", hashed_password)
     assert not main.verify_password("wrong", hashed_password)
+
+def test_register_login_logout(client):
+    response = client.post(
+        "/register",
+        data={"username": "testing", "password": "password"},
+    )
+
+    assert response.status_code == 302
+
+    with main.app.app_context():
+        user = main.get_db().execute(
+            "SELECT * FROM users WHERE username = ?",
+            ("testing",),
+        ).fetchone()
+
+    assert user["is_admin"] == 1
+
+    dupe_response = client.post(
+        "/register",
+        data={"username": "testing", "password": "password"},
+    )
+
+    assert dupe_response.status_code == 200
+
+    login_response = login(client)
+
+    assert login_response.status_code == 302
+
+    with client.session_transaction() as sess:
+        assert sess["user_id"] == user["id"]
+
+    bad_login_response = client.post(
+        "/login",
+        data={"username": "testing", "password": "wrong"},
+    )
+
+    assert bad_login_response.status_code == 200
+
+    logout_response = client.get("/logout")
+
+    assert logout_response.status_code == 302
+
+    with client.session_transaction() as sess:
+        assert "user_id" not in sess

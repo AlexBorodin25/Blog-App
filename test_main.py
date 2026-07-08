@@ -24,3 +24,19 @@ def client(tmp_path, monkeypatch):
 
     with main.app.test_client() as test_client:
         yield test_client
+
+def add_user(username="testing", password="password", is_admin=0):
+    db = main.get_db()
+    db.execute(
+        """
+        INSERT INTO users (username, password_hash, is_admin, created_at)
+        VALUES (?, ?, ?, datetime('now'))
+        """,
+        (username, main.hash_password(password), is_admin),
+    )
+    db.commit()
+
+    return db.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,),
+    ).fetchone()

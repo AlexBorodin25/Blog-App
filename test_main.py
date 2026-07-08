@@ -53,3 +53,16 @@ def add_post(user_id, title="Title", content="Content"):
     db.commit()
 
     return cursor.lastrowid
+
+def add_comment(post_id, user_id, content="Comment"):
+    db = main.get_db()
+    cursor = db.execute(
+        """
+        INSERT INTO comments (post_id, user_id, content, created_at, updated_at)
+        VALUES (?, ?, ?, datetime('now'), datetime('now'))
+        """,
+        (post_id, user_id, content),
+    )
+    db.commit()
+
+    return cursor.lastrowid

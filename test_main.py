@@ -235,3 +235,28 @@ def test_crud_comment(client):
         ).fetchone()
 
     assert deleted_comment is None
+
+def test_auth_rules(client):
+    with main.app.app_context():
+        owner = add_user("owner", "password")
+        other_user = add_user("other", "password")
+        post_id = add_post(owner["id"])
+        comment_id = add_comment(post_id, owner["id"])
+
+    login(client, other_user["username"], "password")
+
+    post_response = client.post(
+        f"/posts/{post_id}/edit",
+        data={"title": "Test", "content": "None"},
+    )
+
+    assert post_response.status_code == 403
+
+    comment_response = client.post(
+        f"/comments/{comment_id}/edit",
+        data={"content": "Test"},
+    )
+
+    assert comment_response.status_code == 403
+
+    assert client.get("/admin").status_code == 403

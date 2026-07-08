@@ -66,3 +66,7 @@ def add_comment(post_id, user_id, content="Comment"):
     db.commit()
 
     return cursor.lastrowid
+
+def login(client, username="testing", password="password"):
+    return client.post("/login", data={"username": username, "password": password})
+

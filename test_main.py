@@ -40,3 +40,16 @@ def add_user(username="testing", password="password", is_admin=0):
         "SELECT * FROM users WHERE username = ?",
         (username,),
     ).fetchone()
+
+def add_post(user_id, title="Title", content="Content"):
+    db = main.get_db()
+    cursor = db.execute(
+        """
+        INSERT INTO posts (user_id, title, content, created_at, updated_at)
+        VALUES (?, ?, ?, datetime('now'), datetime('now'))
+        """,
+        (user_id, title, content),
+    )
+    db.commit()
+
+    return cursor.lastrowid

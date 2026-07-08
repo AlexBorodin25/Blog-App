@@ -4,8 +4,8 @@
 
 <h2>Users</h2>
 <ul>
-{% for items in g.users %}
-    <li>{{ items.username }} {% if item.is_admin %}(admin){% endif %}</li>
+{% for user in users %}
+    <li>{{ user.username }} {% if user.is_admin %}(admin){% endif %}</li>
 {% endfor %}
 </ul>
 

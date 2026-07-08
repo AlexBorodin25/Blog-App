@@ -7,6 +7,6 @@
 
     <textarea name="content" rows="5" required>{{ comment.content }}</textarea>
     <button type="submit">Save comment</button>
-    <a href="{{ url_for('post_detail', post_id=comment.post.id) }}">Cancel</a>
+    <a href="{{ url_for('post_detail', post_id=comment.post_id) }}">Cancel</a>
 </form>
 {% endblock %}

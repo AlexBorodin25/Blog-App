@@ -220,3 +220,6 @@ __marimo__/
 # Database files
 *.db
 .blog.db
+
+# IDE/editor settings
+.idea/
